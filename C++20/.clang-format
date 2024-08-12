@@ -1,1 +1,5 @@
 BasedOnStyle: Google
+
+DerivePointerAlignment: false
+PointerAlignment: Right
+ReferenceAlignment: Right

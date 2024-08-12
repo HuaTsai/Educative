@@ -2,27 +2,27 @@
 
 using namespace std;
 
-void printc(auto& r) {
+void printc(auto &r) {
   cout << format("size({}) ", r.size());
-  for (auto& e : r) cout << format("{} ", e);
+  for (auto &e : r) cout << format("{} ", e);
   cout << endl;
 }
 
-void print_assoc(auto& r) {
+void print_assoc(auto &r) {
   cout << format("size: {}: ", r.size());
-  for (auto& [k, v] : r) cout << format("{}:{} ", k, v);
+  for (auto &[k, v] : r) cout << format("{}:{} ", k, v);
   cout << "\n";
 }
 
 struct Point {
   int x, y;
   Point(int x, int y) : x(x), y(y) {}
-  bool operator==(const Point& p) const { return x == p.x && y == p.y; }
+  bool operator==(const Point &p) const { return x == p.x && y == p.y; }
 };
 
 template <>
 struct std::hash<Point> {
-  size_t operator()(const Point& p) const {
+  size_t operator()(const Point &p) const {
     return hash<int>()(p.x) ^ hash<int>()(p.y);
   }
 };
@@ -33,7 +33,7 @@ class RPN {
   constexpr static double inf_{std::numeric_limits<double>::infinity()};
 
  public:
-  double op(const string& s) {
+  double op(const string &s) {
     if (is_numeric(s)) {
       double v{stod(s, nullptr)};
       deq_.push_front(v);
@@ -63,14 +63,14 @@ class RPN {
     return {v2, v1};
   }
 
-  bool is_numeric(const string& s) {
+  bool is_numeric(const string &s) {
     for (const char c : s) {
       if (c != '.' && !std::isdigit(c)) return false;
     }
     return true;
   }
 
-  double optor(const string& op) {
+  double optor(const string &op) {
     map<string, double (*)(double, double)> opmap{
         {"+", [](double l, double r) { return l + r; }},
         {"-", [](double l, double r) { return l - r; }},
@@ -89,6 +89,14 @@ class RPN {
     return deq_.front();
   }
 };
+
+bool is_eos(const string_view &str) {
+  constexpr const char *end_punct{".!?"};
+  for (auto c : str) {
+    if (strchr(end_punct, c) != nullptr) return true;
+  }
+  return false;
+}
 
 int main() {
   // Erase-remove idiom -> directly remove in C++20
@@ -110,8 +118,8 @@ int main() {
   map<int, string> m = {{1, "one"}, {2, "two"}, {3, "three"}, {4, "four"}};
   print_assoc(m);
 
-  erase_if(m, [](auto& p) {
-    auto& [k, v] = p;
+  erase_if(m, [](auto &p) {
+    auto &[k, v] = p;
     return k % 2 == 0;
   });
   print_assoc(m);
@@ -158,14 +166,16 @@ int main() {
 
   // 1. Use emplace instead of []
   // Important: we should always use emplace instead of [] in modern C++
-  mp["one"] = BigThing("one");  // two ctors: lhs does not exist so calls default ctor, rhs calls ctor
-  mp.emplace("two", "two");     // one ctor: faster
+  // two ctors: lhs does not exist so calls default ctor, rhs calls ctor
+  mp["one"] = BigThing("one");
+  mp.emplace("two", "two");  // one ctor: faster
 
   // 2. If the key exists, emplace will fail
   // To avoid creating unnecessary object, use try_emplace (C++17)
   // Therefore, we should always favor try_emplace over emplace
   mp.emplace("two", "second two");  // Fail, but still calls ctor
-  if (auto [i, s] = mp.try_emplace("two", "third two"); !s) {   // Fail, no payload ctor called
+  // Fail, no payload ctor called
+  if (auto [i, s] = mp.try_emplace("two", "third two"); !s) {
     cout << "Failed to emplace\n";
   }
 
@@ -203,7 +213,7 @@ int main() {
   // custom key of unordered_map
   // unordered_map<Point, int>  -> use hash specialization, more general
   // unordered_map<Point, int, hash_func_type> -> use hash function
-  unordered_map<Point, int> ump { {{0, 0}, 1}, {{1, 1}, 2}, {{2, 2}, 3} };
+  unordered_map<Point, int> ump{{{0, 0}, 1}, {{1, 1}, 2}, {{2, 2}, 3}};
   for (const auto &[k, v] : ump) {
     cout << format("{{ ({}, {}), {} }} ", k.x, k.y, v);
   }
@@ -222,7 +232,7 @@ int main() {
   // RPN Calculator
   RPN rpn;
   vector<string> opv{"9", "6", "*", "2", "3", "*", "+"};
-  for(auto o : opv) {
+  for (auto o : opv) {
     rpn.op(o);
     auto stack_str{rpn.get_stack_string()};
     cout << format("{}: {}\n", o, stack_str);
@@ -235,16 +245,18 @@ int main() {
 
   ifstream ifs("input.txt");
   size_t total_words{};
-  for (string s{}; ifs >> s; ) {  // may be better than while loop, which s is declared outside
+  // may be better than while loop, which s is declared outside
+  for (string s{}; ifs >> s;) {
     sregex_iterator words_begin(s.begin(), s.end(), word_re);
     sregex_iterator words_end;
-    for(auto r_it{words_begin}; r_it != words_end; ++r_it) {
+    for (auto r_it{words_begin}; r_it != words_end; ++r_it) {
       smatch match{*r_it};
       auto word_str{match.str()};
-      ranges::transform(word_str, word_str.begin(), [](unsigned char c) { return tolower(c); });
+      ranges::transform(word_str, word_str.begin(),
+                        [](unsigned char c) { return tolower(c); });
       // Important:
-      //   old method -> check if the key exists, if not insert 1, else increment
-      //   new method -> try_emplace, get reference and increment
+      //   old method -> check if the key exists, if not insert 1, else
+      //   increment new method -> try_emplace, get reference and increment
       auto [map_it, result] = wordmap.try_emplace(word_str, 0);
       auto &[w, count] = *map_it;
       ++total_words;
@@ -255,15 +267,51 @@ int main() {
   auto unique_words = wordmap.size();
   wordvec.reserve(unique_words);
   ranges::move(wordmap, back_inserter(wordvec));
-  ranges::sort(wordvec, [](const auto& a, const auto& b) { 
+  ranges::sort(wordvec, [](const auto &a, const auto &b) {
     return (a.second != b.second) ? (a.second > b.second) : (a.first < b.first);
   });
 
   cout << format("total word count: {}\n", total_words);
   cout << format("unique word count: {}\n", unique_words);
 
-  for(int limit{20}; auto& [w, count] : wordvec) {
+  for (int limit{20}; auto &[w, count] : wordvec) {
     cout << format("{}: {}\n", count, w);
-    if(--limit == 0) break;
+    if (--limit == 0) break;
   }
+
+  // Vector of vector
+  ifstream ifs2("input2.txt");
+  vector<vector<string>> vv{vector<string>{}};
+  for (string s{}; ifs2 >> s;) {
+    vv.back().emplace_back(s);
+    if (is_eos(s)) vv.emplace_back(vector<string>{});
+  }
+  if (vv.back().empty()) vv.pop_back();
+  ranges::sort(
+      vv, [](const auto &a, const auto &b) { return a.size() > b.size(); });
+  constexpr int WLIMIT{10};
+  for (auto &v : vv) {
+    size_t size = v.size();
+    int limit{WLIMIT};
+    cout << format("{}: ", size);
+    for (auto &s : v) {
+      cout << format("{} ", s);
+      if (--limit == 0) {
+        if (size > WLIMIT) cout << "...";
+        break;
+      }
+    }
+    cout << endl;
+  }
+  cout << endl;
+
+  // Priority queue by multimap
+  multimap<int, string> mp{{1, "wash dishes"},
+                           {0, "watch teevee"},
+                           {2, "do homework"},
+                           {0, "read comics"}};
+  for (auto it = mp.rbegin(); it != mp.rend(); ++it) {
+    cout << format("{}: {}\n", it->first, it->second);
+  }
+  cout << endl;
 }
