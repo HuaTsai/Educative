@@ -25,5 +25,5 @@ CALCULATOR_INLINE double power(double base, int exp);
 
 // Implementation in Header File
 #ifdef CALCULATOR_HEADER_ONLY
-#include <calculator_impl.hpp>
+#include <calculator.inl>
 #endif

@@ -1,5 +1,5 @@
 // calculator.cc
-#include <calculator_impl.hpp>
+#include <calculator.inl>
 
 template double Calculator::add<double>(double a, double b);
 template int Calculator::add<int>(int a, int b);
