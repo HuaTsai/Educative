@@ -1,5 +1,6 @@
 build
-a.out
+__pycache__
+*.egg-info
 .ipynb_checkpoints
 certificate.png
 .cache
